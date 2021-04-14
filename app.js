@@ -1,9 +1,35 @@
 const express = require('express');
 const config = require('config');
 const mongoose = require('mongoose');
+const cors = require('cors');
 const path = require('path');
+const log4js = require('log4js');
+
+log4js.configure({
+  appenders: {
+    'out': {
+      type: 'stdout',
+    },
+  },
+  categories: { default: { appenders: ['out'], level: 'info' } }
+});
+const logger = log4js.getLogger();
 
 const app = express();
+
+const allowedOrigins = [config.get('baseUrl')];
+const corsOptionsDelegate = {
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  }
+};
+app.use(cors(corsOptionsDelegate));
 
 app.use(express.json({ extended: true }));
 
@@ -28,9 +54,9 @@ async function start() {
       useUnifiedTopology: true,
       useCreateIndex: true,
     });
-    app.listen(PORT, () => console.log(`App has been started on port ${PORT}`));
+    app.listen(PORT, () => logger.info(`App has been started on port ${PORT}`));
   } catch (e) {
-    console.log('Server ERROR', e.message);
+    logger.error('Server ERROR:', e.message);
     process.exit(1);
   }
 }

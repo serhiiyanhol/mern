@@ -53,41 +53,41 @@ router.post(
     check('password', 'Enter the password').exists(),
   ],
   async (request, response) => {
-  try {
-    const errors = validationResult(request);
+    try {
+      const errors = validationResult(request);
 
-    if (!errors.isEmpty()) {
-      return response.status(400).json({
-        errors: errors.array(),
-        message: 'Incorrect data while login'
-      });
+      if (!errors.isEmpty()) {
+        return response.status(400).json({
+          errors: errors.array(),
+          message: 'Incorrect data while login'
+        });
+      }
+
+      const { email, password } = request.body;
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        return response.status(400).json({ message: 'User not found' });
+      }
+
+      const isMatch = await bcrypt.compare(password, user.password);
+
+      if (!isMatch) {
+        return response.status(400).jsonp({ message: 'Incorrect password, please, try again' });
+      }
+
+      const token = jwt.sign(
+        { userId: user.id },
+        config.get('jwtSecret'),
+        { expiresIn: '1h' }
+      );
+
+      response.json({ token, userId: user.id });
+
+    } catch (e) {
+      response.status(500).json({ message: 'Something went wrong, please, try again' });
     }
-
-    const { email, password } = request.body;
-    const user = await User.findOne({ email });
-
-    if (!user) {
-      return response.status(400).json({ message: 'User not found' });
-    }
-
-    const isMatch = await bcrypt.compare(password, user.password);
-
-    if (!isMatch) {
-      return response.status(400).jsonp({ message: 'Incorrect password, please, try again' });
-    }
-
-    const token = jwt.sign(
-      { userId: user.id },
-      config.get('jwtSecret'),
-      { expiresIn: '1h' }
-    );
-
-    response.json({ token, userId: user.id });
-
-  } catch (e) {
-    console.log('e.message::', e.message);
-    response.status(500).json({ message: 'Something went wrong, please, try again' });
   }
-});
+);
 
 module.exports = router;

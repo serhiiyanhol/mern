@@ -12,9 +12,9 @@ router.get('/:code', async (req, res) => {
       return res.redirect(link.from);
     }
 
-    res.status(404).json({message: 'Link not found'});
+    res.status(404).json({ message: 'Link not found' });
   } catch (e) {
-    res.status(500).json({message: 'Something went wrong'});
+    res.status(500).json({ message: 'Something went wrong' });
   }
 });
 
